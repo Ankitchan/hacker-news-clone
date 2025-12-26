@@ -4,6 +4,8 @@ import Feed from './pages/Feed';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import PostDetail from './pages/PostDetail';
+import Submit from './pages/Submit';
+import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
 function App() {
@@ -15,6 +17,14 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/post/:id" element={<PostDetail />} />
+          <Route
+            path="/submit"
+            element={
+              <ProtectedRoute>
+                <Submit />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>

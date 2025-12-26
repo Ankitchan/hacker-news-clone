@@ -1,4 +1,5 @@
 .post-detail-container {
+  width: 100%;
   min-height: 100vh;
   background: #f6f6ef;
 }

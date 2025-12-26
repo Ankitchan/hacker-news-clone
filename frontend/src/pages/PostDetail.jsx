@@ -19,7 +19,7 @@ const PostDetail = () => {
       setError('');
       try {
         const data = await postService.getPostById(id);
-        setPost(data.post);
+        setPost(data);
       } catch (err) {
         setError('Failed to load post');
         console.error('Error loading post:', err);
@@ -127,9 +127,9 @@ const PostDetail = () => {
             <span className="post-time">{formatTimeAgo(post.created_at)}</span>
           </div>
 
-          {post.text && (
+          {post.text?.Valid && post.text?.String && (
             <div className="post-detail-text">
-              <p>{post.text}</p>
+              <p>{post.text.String}</p>
             </div>
           )}
         </div>

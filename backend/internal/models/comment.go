@@ -16,7 +16,7 @@ type Comment struct {
 	Depth     int          `json:"depth"`               // 0 for top-level, increases with nesting
 	CreatedAt time.Time    `json:"created_at"`
 	UpdatedAt time.Time    `json:"updated_at"`
-	Children  []Comment    `json:"children,omitempty"`  // For threaded display
+	Replies   []Comment    `json:"replies,omitempty"`  // For threaded display
 }
 
 type CommentCreate struct {

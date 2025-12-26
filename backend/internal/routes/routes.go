@@ -67,8 +67,13 @@ func SetupRoutes(db *sql.DB) *mux.Router {
 	commentRoutes.HandleFunc("/{id:[0-9]+}", commentHandler.GetByID).Methods("GET")
 	commentRoutes.HandleFunc("/{id:[0-9]+}/replies", commentHandler.GetReplies).Methods("GET")
 
-	// Get comments by post ID
+	// Get comments by post ID (public)
 	api.HandleFunc("/posts/{post_id:[0-9]+}/comments", commentHandler.GetByPostID).Methods("GET")
+
+	// Create comment for a specific post (protected)
+	postCommentProtected := api.PathPrefix("/posts/{post_id:[0-9]+}/comments").Subrouter()
+	postCommentProtected.Use(middleware.AuthMiddleware)
+	postCommentProtected.HandleFunc("", commentHandler.CreateForPost).Methods("POST")
 
 	// Protected comment routes
 	commentProtected := commentRoutes.PathPrefix("").Subrouter()

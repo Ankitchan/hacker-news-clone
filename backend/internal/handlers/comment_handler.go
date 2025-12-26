@@ -92,6 +92,82 @@ func (h *CommentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	utils.RespondWithJSON(w, http.StatusCreated, fullComment)
 }
 
+// CreateForPost creates a new comment for a specific post (post_id from URL)
+func (h *CommentHandler) CreateForPost(w http.ResponseWriter, r *http.Request) {
+	// Get user from context
+	claims, ok := utils.GetUserFromRequest(r)
+	if !ok {
+		utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	// Get post ID from URL
+	postID, err := utils.GetIDParam(r, "post_id")
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// Parse request body
+	var requestData struct {
+		Text     string `json:"text"`
+		ParentID *int   `json:"parent_id,omitempty"`
+	}
+	if err := utils.ParseJSONBody(r, &requestData); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	// Validate input
+	if strings.TrimSpace(requestData.Text) == "" {
+		utils.RespondWithError(w, http.StatusBadRequest, "Comment text is required")
+		return
+	}
+
+	requestData.Text = strings.TrimSpace(requestData.Text)
+
+	// Verify post exists
+	_, err = h.postRepo.GetByID(postID)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusNotFound, "Post not found")
+		return
+	}
+
+	// If parent_id is provided, verify it exists
+	if requestData.ParentID != nil && *requestData.ParentID > 0 {
+		_, err := h.commentRepo.GetByID(*requestData.ParentID)
+		if err != nil {
+			utils.RespondWithError(w, http.StatusNotFound, "Parent comment not found")
+			return
+		}
+	}
+
+	// Create comment
+	comment := &models.Comment{
+		PostID: postID,
+		UserID: claims.UserID,
+		Text:   requestData.Text,
+	}
+
+	if requestData.ParentID != nil && *requestData.ParentID > 0 {
+		comment.ParentID = sql.NullInt64{Int64: int64(*requestData.ParentID), Valid: true}
+	}
+
+	if err := h.commentRepo.Create(comment); err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create comment")
+		return
+	}
+
+	// Get the full comment with username
+	fullComment, err := h.commentRepo.GetByID(comment.ID)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve created comment")
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusCreated, fullComment)
+}
+
 // GetByID retrieves a single comment
 func (h *CommentHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.GetIDParam(r, "id")

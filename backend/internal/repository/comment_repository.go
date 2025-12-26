@@ -138,29 +138,56 @@ func (r *CommentRepository) GetByPostIDThreaded(postID int) ([]models.Comment, e
 
 // buildCommentTree converts a flat list of comments into a threaded structure
 func buildCommentTree(comments []models.Comment) []models.Comment {
-	// Create a map for quick lookup
+	// Create a map for quick lookup and initialize replies
 	commentMap := make(map[int]*models.Comment)
 	for i := range comments {
-		comments[i].Children = []models.Comment{}
+		comments[i].Replies = []models.Comment{}
 		commentMap[comments[i].ID] = &comments[i]
 	}
 
-	// Build the tree
-	var rootComments []models.Comment
+	// Track root comment IDs
+	var rootIDs []int
+
+	// Attach children to their parents
 	for i := range comments {
 		if comments[i].ParentID.Valid {
 			// This is a child comment
 			parentID := int(comments[i].ParentID.Int64)
 			if parent, ok := commentMap[parentID]; ok {
-				parent.Children = append(parent.Children, comments[i])
+				// Append pointer reference so nested updates propagate
+				parent.Replies = append(parent.Replies, *commentMap[comments[i].ID])
 			}
 		} else {
-			// This is a root comment
-			rootComments = append(rootComments, comments[i])
+			// Track root comment IDs
+			rootIDs = append(rootIDs, comments[i].ID)
+		}
+	}
+
+	// Collect root comments - need to build recursively to capture all nested levels
+	var rootComments []models.Comment
+	for _, id := range rootIDs {
+		if comment, ok := commentMap[id]; ok {
+			rootComments = append(rootComments, buildCommentWithReplies(comment, commentMap))
 		}
 	}
 
 	return rootComments
+}
+
+// buildCommentWithReplies recursively builds a comment with all its nested replies
+func buildCommentWithReplies(comment *models.Comment, commentMap map[int]*models.Comment) models.Comment {
+	result := *comment
+	result.Replies = []models.Comment{}
+
+	// Find all direct children
+	for id, c := range commentMap {
+		if c.ParentID.Valid && int(c.ParentID.Int64) == comment.ID {
+			// Recursively build this child with its replies
+			result.Replies = append(result.Replies, buildCommentWithReplies(commentMap[id], commentMap))
+		}
+	}
+
+	return result
 }
 
 // GetByUserID retrieves all comments by a specific user
