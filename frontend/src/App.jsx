@@ -1,9 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
-import Home from './pages/Home';
+import Feed from './pages/Feed';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import PostDetail from './pages/PostDetail';
 import './App.css';
 
 function App() {
@@ -11,16 +11,10 @@ function App() {
     <Router>
       <AuthProvider>
         <Routes>
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Home />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/" element={<Feed />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/post/:id" element={<PostDetail />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>

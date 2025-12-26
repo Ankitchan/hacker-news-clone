@@ -22,15 +22,30 @@ var DB *sql.DB
 
 // Connect establishes a connection to the PostgreSQL database
 func Connect(cfg Config) (*sql.DB, error) {
-	dsn := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		cfg.Host,
-		cfg.Port,
-		cfg.User,
-		cfg.Password,
-		cfg.DBName,
-		cfg.SSLMode,
-	)
+	var dsn string
+	if cfg.Password != "" {
+		dsn = fmt.Sprintf(
+			"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+			cfg.Host,
+			cfg.Port,
+			cfg.User,
+			cfg.Password,
+			cfg.DBName,
+			cfg.SSLMode,
+		)
+	} else {
+		dsn = fmt.Sprintf(
+			"host=%s port=%s user=%s dbname=%s sslmode=%s",
+			cfg.Host,
+			cfg.Port,
+			cfg.User,
+			cfg.DBName,
+			cfg.SSLMode,
+		)
+	}
+
+	log.Printf("DSN (without password): host=%s port=%s user=%s dbname=%s sslmode=%s",
+		cfg.Host, cfg.Port, cfg.User, cfg.DBName, cfg.SSLMode)
 
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
@@ -48,8 +63,15 @@ func Connect(cfg Config) (*sql.DB, error) {
 		return nil, fmt.Errorf("error connecting to database: %w", err)
 	}
 
+	// Verify which database we're connected to
+	var currentDB string
+	err = db.QueryRow("SELECT current_database()").Scan(&currentDB)
+	if err != nil {
+		return nil, fmt.Errorf("error verifying database: %w", err)
+	}
+	log.Printf("Successfully connected to database: %s", currentDB)
+
 	DB = db
-	log.Println("Successfully connected to database")
 	return db, nil
 }
 
