@@ -28,6 +28,12 @@ A fully functional Hacker News clone backend built with Go and PostgreSQL.
 - Automatic points calculation
 - Vote tracking per user
 
+✅ **Security & Protection**
+- Rate limiting middleware (DDoS protection)
+- IP-based request throttling
+- Token bucket algorithm (10 req/sec, burst of 20)
+- Automatic cleanup to prevent memory leaks
+
 ## Tech Stack
 
 - **Language:** Go 1.25.5
@@ -36,6 +42,7 @@ A fully functional Hacker News clone backend built with Go and PostgreSQL.
 - **Authentication:** JWT (golang-jwt/jwt/v5)
 - **Password Hashing:** bcrypt
 - **CORS:** rs/cors
+- **Rate Limiting:** golang.org/x/time/rate
 
 ## Project Structure
 
@@ -44,7 +51,7 @@ backend/
 ├── cmd/api/              # Application entry point
 ├── internal/
 │   ├── handlers/        # HTTP request handlers
-│   ├── middleware/      # Auth, CORS, logging middleware
+│   ├── middleware/      # Auth, CORS, rate limiting middleware
 │   ├── models/          # Data models
 │   ├── repository/      # Database operations
 │   ├── routes/          # API route definitions
@@ -161,11 +168,13 @@ The application automatically runs migrations on startup. Schema includes:
 
 ## Security Features
 
-- Password hashing with bcrypt (automatic unique salt per password)
-- JWT token-based authentication
-- CORS protection
-- SQL injection prevention (parameterized queries)
-- Authorization checks (users can only edit/delete their own content)
+- **Password hashing** with bcrypt (automatic unique salt per password)
+- **JWT token-based authentication** with refresh mechanism
+- **Rate limiting** to prevent DDoS attacks (10 req/sec per IP, burst of 20)
+- **CORS protection** with configurable origins
+- **SQL injection prevention** (parameterized queries)
+- **Authorization checks** (users can only edit/delete their own content)
+- **Proxy-aware IP detection** (X-Forwarded-For, X-Real-IP headers)
 
 ## Testing
 
@@ -236,8 +245,22 @@ Before deploying to production:
 3. Enable SSL for PostgreSQL (`DB_SSL_MODE=require`)
 4. Set appropriate CORS origins
 5. Use HTTPS for the API
-6. Consider rate limiting
+6. Review rate limiting settings (currently 10 req/sec, burst 20)
 7. Set up proper logging and monitoring
+8. Configure reverse proxy headers for accurate IP detection
+
+### Rate Limiting Configuration
+
+The application includes built-in rate limiting with the following defaults:
+- **Rate:** 10 requests per second per IP
+- **Burst:** 20 requests (allows temporary spikes)
+- **Algorithm:** Token bucket
+- **Cleanup:** Automatic every 5 minutes
+
+To adjust rate limits, modify the values in `internal/routes/routes.go`:
+```go
+rateLimiter := middleware.NewRateLimiter(rate.Limit(10), 20)
+```
 
 ## License
 
