@@ -11,6 +11,7 @@ const CommentList = ({ postId }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const loadComments = async () => {
     setLoading(true);
@@ -18,6 +19,7 @@ const CommentList = ({ postId }) => {
     try {
       const data = await commentService.getCommentsByPost(postId);
       setComments(data.comments || []);
+      setRefreshKey(prev => prev + 1); // Force re-render of comment tree
     } catch (err) {
       setError('Failed to load comments');
       console.error('Error loading comments:', err);
@@ -55,6 +57,20 @@ const CommentList = ({ postId }) => {
     loadComments();
   };
 
+  // Count total comments including nested replies
+  const countAllComments = (commentList) => {
+    let count = 0;
+    commentList.forEach(comment => {
+      count += 1; // Count the comment itself
+      if (comment.replies && comment.replies.length > 0) {
+        count += countAllComments(comment.replies); // Recursively count replies
+      }
+    });
+    return count;
+  };
+
+  const totalCommentCount = countAllComments(comments);
+
   if (loading) {
     return <div className="comments-loading">Loading comments...</div>;
   }
@@ -66,7 +82,7 @@ const CommentList = ({ postId }) => {
   return (
     <div className="comments-section">
       <h2 className="comments-header">
-        Comments ({comments.length})
+        Comments ({totalCommentCount})
       </h2>
 
       {isAuthenticated ? (
@@ -92,7 +108,7 @@ const CommentList = ({ postId }) => {
         </div>
       )}
 
-      <div className="comments-list">
+      <div className="comments-list" key={refreshKey}>
         {comments.length === 0 ? (
           <p className="no-comments">No comments yet. Be the first to comment!</p>
         ) : (
