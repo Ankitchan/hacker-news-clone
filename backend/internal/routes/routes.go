@@ -7,6 +7,7 @@ import (
 	"github.com/Ankitchan/hackernews-clone/internal/handlers"
 	"github.com/Ankitchan/hackernews-clone/internal/middleware"
 	"github.com/gorilla/mux"
+	"golang.org/x/time/rate"
 )
 
 // SetupRoutes configures all API routes
@@ -21,6 +22,11 @@ func SetupRoutes(db *sql.DB) *mux.Router {
 
 	// API routes
 	api := router.PathPrefix("/api").Subrouter()
+
+	// Setup rate limiter: 10 requests per second with burst of 20
+	// This prevents DDoS attacks while allowing normal usage
+	rateLimiter := middleware.NewRateLimiter(rate.Limit(10), 20)
+	api.Use(middleware.RateLimitMiddleware(rateLimiter))
 
 	// Health check
 	api.HandleFunc("/health", healthCheck).Methods("GET")
