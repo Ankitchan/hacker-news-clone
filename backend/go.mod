@@ -10,3 +10,5 @@ require (
 	github.com/rs/cors v1.11.1
 	golang.org/x/crypto v0.46.0
 )
+
+require golang.org/x/time v0.14.0 // indirect
