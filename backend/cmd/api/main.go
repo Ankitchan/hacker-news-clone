@@ -25,7 +25,7 @@ func main() {
 	dbPort := getEnv("DB_PORT", "5432")
 	dbUser := getEnv("DB_USER", "postgres")
 	dbPassword := getEnv("DB_PASSWORD", "")
-	dbName := getEnv("DB_NAME", "hackernews_clone")
+	dbName := getEnv("DB_NAME", "hacker_news_db")
 	dbSSLMode := getEnv("DB_SSL_MODE", "disable")
 	jwtSecret := getEnv("JWT_SECRET", "")
 	jwtExpirationHours := 72 // Default 3 days
@@ -50,6 +50,7 @@ func main() {
 		SSLMode:  dbSSLMode,
 	}
 
+	log.Printf("Connecting to database: %s on %s:%s", dbName, dbHost, dbPort)
 	db, err := database.Connect(dbConfig)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)

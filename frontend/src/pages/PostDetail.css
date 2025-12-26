@@ -1,0 +1,166 @@
+.post-detail-container {
+  min-height: 100vh;
+  background: #f6f6ef;
+}
+
+.post-detail-header {
+  background: #ff6600;
+  padding: 4px 8px;
+  border-bottom: 2px solid #ff6600;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.site-title-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.site-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0;
+  color: black;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.username {
+  color: black;
+  font-weight: bold;
+}
+
+.nav-separator {
+  color: black;
+}
+
+.nav-link {
+  background: none;
+  border: none;
+  color: black;
+  cursor: pointer;
+  font-size: 12px;
+  text-decoration: none;
+  padding: 0;
+}
+
+.nav-link:hover {
+  text-decoration: underline;
+}
+
+.post-detail-main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 15px;
+}
+
+.post-detail-content {
+  background: white;
+  padding: 20px;
+  border-radius: 3px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.post-detail-header-section {
+  margin-bottom: 12px;
+}
+
+.post-detail-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.post-detail-title a {
+  color: #000;
+  text-decoration: none;
+}
+
+.post-detail-title a:hover {
+  text-decoration: underline;
+}
+
+.post-detail-domain {
+  font-size: 12px;
+  color: #828282;
+  margin-left: 6px;
+}
+
+.post-detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #828282;
+}
+
+.post-points {
+  font-weight: bold;
+}
+
+.post-separator {
+  color: #828282;
+}
+
+.post-author {
+  color: #828282;
+  text-decoration: none;
+}
+
+.post-author:hover {
+  text-decoration: underline;
+}
+
+.post-time {
+  color: #828282;
+}
+
+.post-detail-text {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e5e5;
+}
+
+.post-detail-text p {
+  margin: 0;
+  line-height: 1.6;
+  color: #000;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.loading,
+.error {
+  padding: 40px 20px;
+  text-align: center;
+  color: #828282;
+}
+
+.error {
+  color: #d00;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 16px;
+  color: #ff6600;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}

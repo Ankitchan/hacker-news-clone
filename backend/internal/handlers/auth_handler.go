@@ -123,17 +123,26 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate input
-	if loginData.Email == "" || loginData.Password == "" {
-		utils.RespondWithError(w, http.StatusBadRequest, "Email and password are required")
+	if (loginData.Email == "" && loginData.Username == "") || loginData.Password == "" {
+		utils.RespondWithError(w, http.StatusBadRequest, "Username/email and password are required")
 		return
 	}
 
 	loginData.Email = strings.TrimSpace(loginData.Email)
+	loginData.Username = strings.TrimSpace(loginData.Username)
 
-	// Get user by email
-	user, err := h.userRepo.GetByEmail(loginData.Email)
+	// Get user by email or username
+	var user *models.User
+	var err error
+
+	if loginData.Email != "" {
+		user, err = h.userRepo.GetByEmail(loginData.Email)
+	} else {
+		user, err = h.userRepo.GetByUsername(loginData.Username)
+	}
+
 	if err != nil {
-		utils.RespondWithError(w, http.StatusUnauthorized, "Invalid email or password")
+		utils.RespondWithError(w, http.StatusUnauthorized, "Invalid credentials")
 		return
 	}
 
