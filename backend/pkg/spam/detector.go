@@ -116,9 +116,7 @@ func (d *Detector) IsSpam(text string) (bool, float64, error) {
 // quickSpamCheck performs basic heuristic checks to catch obvious spam
 // This saves API calls and provides instant feedback
 func (d *Detector) quickSpamCheck(text string) bool {
-	text = strings.ToLower(text)
-
-	// Check for excessive capitalization (>70% caps)
+	// Check for excessive capitalization (>70% caps) BEFORE converting to lowercase
 	upperCount := 0
 	letterCount := 0
 	for _, r := range text {
@@ -133,6 +131,9 @@ func (d *Detector) quickSpamCheck(text string) bool {
 		return true
 	}
 
+	// Convert to lowercase for keyword matching
+	textLower := strings.ToLower(text)
+
 	// Check for common spam keywords
 	spamKeywords := []string{
 		"click here", "buy now", "free money", "prize winner",
@@ -143,20 +144,20 @@ func (d *Detector) quickSpamCheck(text string) bool {
 	}
 
 	for _, keyword := range spamKeywords {
-		if strings.Contains(text, keyword) {
+		if strings.Contains(textLower, keyword) {
 			return true
 		}
 	}
 
 	// Check for excessive URLs (more than 3)
-	urlCount := strings.Count(text, "http://") + strings.Count(text, "https://")
+	urlCount := strings.Count(textLower, "http://") + strings.Count(textLower, "https://")
 	if urlCount > 3 {
 		return true
 	}
 
 	// Check for excessive repeated characters (e.g., "hellooooooo")
-	for i := 0; i < len(text)-4; i++ {
-		if text[i] == text[i+1] && text[i] == text[i+2] && text[i] == text[i+3] && text[i] == text[i+4] {
+	for i := 0; i < len(textLower)-4; i++ {
+		if textLower[i] == textLower[i+1] && textLower[i] == textLower[i+2] && textLower[i] == textLower[i+3] && textLower[i] == textLower[i+4] {
 			return true
 		}
 	}

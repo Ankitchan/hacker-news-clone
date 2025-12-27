@@ -157,6 +157,17 @@ func (h *CommentHandler) CreateForPost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Check for spam
+	isSpam, confidence, err := h.spamDetector.IsSpam(requestData.Text)
+	if err != nil {
+		// Log error but don't block comment creation if spam detection fails
+		log.Printf("Spam detection error: %v", err)
+	} else if isSpam {
+		log.Printf("Spam detected with confidence %.2f: %s", confidence, requestData.Text)
+		utils.RespondWithError(w, http.StatusForbidden, "Content flagged as spam")
+		return
+	}
+
 	// Create comment
 	comment := &models.Comment{
 		PostID: postID,
