@@ -1,6 +1,6 @@
-# Hacker News Clone - Backend
+# Hacker News Clone
 
-A fully functional Hacker News clone backend built with Go and PostgreSQL.
+A fully functional Hacker News clone with Go backend and React frontend.
 
 ## Features
 
@@ -35,6 +35,17 @@ A fully functional Hacker News clone backend built with Go and PostgreSQL.
 - Automatic points calculation
 - Vote tracking per user
 
+✅ **Notifications**
+- Real-time notification system
+- Database triggers for automatic notification creation
+- Notification types:
+  - Comment on post
+  - Reply to comment
+  - Comment edit
+- Mark as read/unread functionality
+- Unread count badge
+- Auto-refresh every 30 seconds
+
 ✅ **Security & Protection**
 - Rate limiting middleware (DDoS protection)
 - IP-based request throttling
@@ -43,6 +54,7 @@ A fully functional Hacker News clone backend built with Go and PostgreSQL.
 
 ## Tech Stack
 
+### Backend
 - **Language:** Go 1.25.5
 - **Database:** PostgreSQL 18.1
 - **Router:** Gorilla Mux
@@ -51,22 +63,44 @@ A fully functional Hacker News clone backend built with Go and PostgreSQL.
 - **CORS:** rs/cors
 - **Rate Limiting:** golang.org/x/time/rate
 
+### Frontend
+- **Framework:** React 18
+- **Build Tool:** Vite
+- **Routing:** React Router v6
+- **HTTP Client:** Axios
+- **Styling:** CSS (Hacker News theme)
+- **Features:**
+  - Infinite scroll pagination
+  - Real-time notification badge
+  - Threaded comments
+  - Search functionality
+  - Responsive design
+
 ## Project Structure
 
 ```
-backend/
-├── cmd/api/              # Application entry point
-├── internal/
-│   ├── handlers/        # HTTP request handlers
-│   ├── middleware/      # Auth, CORS, rate limiting middleware
-│   ├── models/          # Data models
-│   ├── repository/      # Database operations
-│   ├── routes/          # API route definitions
-│   └── utils/           # Helper functions
-├── migrations/          # Database migration files
-└── pkg/
-    ├── auth/            # JWT and password utilities
-    └── database/        # Database connection and migrations
+hacker_news_clone/
+├── backend/
+│   ├── cmd/api/              # Application entry point
+│   ├── internal/
+│   │   ├── handlers/        # HTTP request handlers (posts, comments, votes, notifications)
+│   │   ├── middleware/      # Auth, CORS, rate limiting middleware
+│   │   ├── models/          # Data models
+│   │   ├── repository/      # Database operations
+│   │   ├── routes/          # API route definitions
+│   │   └── utils/           # Helper functions
+│   ├── migrations/          # Database migration files (001_init_schema, 002_add_notifications)
+│   └── pkg/
+│       ├── auth/            # JWT and password utilities
+│       └── database/        # Database connection and migrations
+└── frontend/
+    ├── src/
+    │   ├── components/      # React components (Post, Comment, SearchBar, etc.)
+    │   ├── context/         # React context (AuthContext)
+    │   ├── pages/           # Page components (Feed, Submit, PostDetail, etc.)
+    │   ├── services/        # API service layer
+    │   └── main.jsx         # Application entry point
+    └── public/              # Static assets
 ```
 
 ## Setup
@@ -75,8 +109,9 @@ backend/
 
 - Go 1.25.5 or higher
 - PostgreSQL 18.1 or higher
+- Node.js 18+ and npm (for frontend)
 
-### Installation
+### Backend Installation
 
 1. **Clone the repository**
    ```bash
@@ -113,7 +148,41 @@ backend/
    ./bin/api
    ```
 
-The server will start on `http://localhost:8080` (configurable via PORT environment variable).
+The backend server will start on `http://localhost:8080` (configurable via PORT environment variable).
+
+### Frontend Installation
+
+1. **Navigate to frontend directory**
+   ```bash
+   cd hacker_news_clone/frontend
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Run development server**
+   ```bash
+   npm run dev
+   ```
+
+The frontend will start on `http://localhost:5173` with hot module reloading.
+
+### Production Build
+
+**Frontend:**
+```bash
+cd frontend
+npm run build
+# Build output will be in frontend/dist/
+```
+
+**Backend:**
+```bash
+cd backend
+go build -o bin/api ./cmd/api
+```
 
 ## Environment Variables
 
@@ -170,6 +239,23 @@ curl http://localhost:8080/api/posts?sort=top&page=1&page_size=20
 curl http://localhost:8080/api/posts?sort=best&page=1&page_size=20
 ```
 
+**Notifications:**
+```bash
+# Get all notifications
+curl http://localhost:8080/api/notifications \
+  -H 'Authorization: Bearer YOUR_TOKEN'
+
+# Get unread notifications count
+curl http://localhost:8080/api/notifications/unread/count \
+  -H 'Authorization: Bearer YOUR_TOKEN'
+
+# Mark notifications as read
+curl -X POST http://localhost:8080/api/notifications/mark-read \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer YOUR_TOKEN' \
+  -d '{"notification_ids":[1,2,3]}'
+```
+
 ## Sorting Algorithms
 
 ### Top - Hacker News Ranking Formula
@@ -213,7 +299,18 @@ The application automatically runs migrations on startup. Schema includes:
 - **posts** - Posts with URL or text content
 - **comments** - Threaded comments with automatic depth
 - **votes** - Voting system for posts and comments
+- **notifications** - User notifications with triggers
 - **schema_migrations** - Migration tracking
+
+### Notification System
+
+The notification system uses PostgreSQL triggers to automatically create notifications:
+
+1. **Comment on Post**: When someone comments on your post
+2. **Reply to Comment**: When someone replies to your comment
+3. **Comment Edit**: When someone edits a comment on your post
+
+Notifications are automatically created via database triggers, ensuring real-time updates without polling.
 
 ## Security Features
 

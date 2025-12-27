@@ -5,16 +5,18 @@ import './PostList.css';
 
 const PostList = ({ sort = 'new', searchQuery = '' }) => {
   const [posts, setPosts] = useState([]);
-  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState('');
   const observer = useRef();
+  const loadingRef = useRef(false);
+  const pageRef = useRef(1);
 
   // Load posts
   const loadPosts = useCallback(async (pageNum, reset = false) => {
-    if (loading) return;
+    if (loadingRef.current) return;
 
+    loadingRef.current = true;
     setLoading(true);
     setError('');
 
@@ -34,23 +36,36 @@ const PostList = ({ sort = 'new', searchQuery = '' }) => {
       setError(err.response?.data?.error || 'Failed to load posts');
     } finally {
       setLoading(false);
+      loadingRef.current = false;
     }
-  }, [sort, loading, searchQuery]);
+  }, [sort, searchQuery]);
 
   // Reset when sort or search changes
   useEffect(() => {
-    setPosts([]);
-    setPage(1);
-    setHasMore(true);
-    loadPosts(1, true);
-  }, [sort, searchQuery]);
+    let cancelled = false;
 
-  // Initial load
-  useEffect(() => {
-    if (page === 1 && posts.length === 0) {
-      loadPosts(1, true);
-    }
-  }, []);
+    const loadInitialPosts = async () => {
+      // Scroll to top when changing sort or search
+      window.scrollTo(0, 0);
+
+      setPosts([]);
+      pageRef.current = 1;
+      setHasMore(true);
+      loadingRef.current = false; // Reset loading flag
+
+      if (!cancelled) {
+        await loadPosts(1, true);
+      }
+    };
+
+    loadInitialPosts();
+
+    return () => {
+      cancelled = true;
+      loadingRef.current = false; // Reset loading flag on cleanup
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sort, searchQuery]);
 
   // Intersection observer callback
   const lastPostRef = useCallback(node => {
@@ -58,16 +73,17 @@ const PostList = ({ sort = 'new', searchQuery = '' }) => {
     if (observer.current) observer.current.disconnect();
 
     observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
-        setPage(prevPage => {
-          const nextPage = prevPage + 1;
-          loadPosts(nextPage);
-          return nextPage;
-        });
+      if (entries[0].isIntersecting && hasMore && !loadingRef.current) {
+        pageRef.current += 1;
+        loadPosts(pageRef.current);
       }
+    }, {
+      rootMargin: '200px', // Start loading when within 200px of the last post
+      threshold: 0.1
     });
 
     if (node) observer.current.observe(node);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, hasMore]);
 
   if (error && posts.length === 0) {

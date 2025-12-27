@@ -19,6 +19,7 @@ func SetupRoutes(db *sql.DB) *mux.Router {
 	postHandler := handlers.NewPostHandler(db)
 	commentHandler := handlers.NewCommentHandler(db)
 	voteHandler := handlers.NewVoteHandler(db)
+	notificationHandler := handlers.NewNotificationHandler(db)
 
 	// API routes
 	api := router.PathPrefix("/api").Subrouter()
@@ -103,6 +104,19 @@ func SetupRoutes(db *sql.DB) *mux.Router {
 	voteRoutes.HandleFunc("/comments/{id:[0-9]+}", voteHandler.VoteOnComment).Methods("POST")
 	voteRoutes.HandleFunc("/comments/{id:[0-9]+}", voteHandler.UnvoteComment).Methods("DELETE")
 	voteRoutes.HandleFunc("/comments/{id:[0-9]+}/user", voteHandler.GetUserVoteOnComment).Methods("GET")
+
+	// ===========================
+	// Notification Routes (All Protected)
+	// ===========================
+	notificationRoutes := api.PathPrefix("/notifications").Subrouter()
+	notificationRoutes.Use(middleware.AuthMiddleware)
+
+	notificationRoutes.HandleFunc("", notificationHandler.GetAll).Methods("GET")
+	notificationRoutes.HandleFunc("/unread", notificationHandler.GetUnread).Methods("GET")
+	notificationRoutes.HandleFunc("/unread/count", notificationHandler.GetUnreadCount).Methods("GET")
+	notificationRoutes.HandleFunc("/mark-read", notificationHandler.MarkAsRead).Methods("POST")
+	notificationRoutes.HandleFunc("/mark-all-read", notificationHandler.MarkAllAsRead).Methods("POST")
+	notificationRoutes.HandleFunc("/{id:[0-9]+}", notificationHandler.Delete).Methods("DELETE")
 
 	return router
 }
