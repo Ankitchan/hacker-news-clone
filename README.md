@@ -13,7 +13,14 @@ A fully functional Hacker News clone backend built with Go and PostgreSQL.
 ✅ **Posts**
 - Create URL or text posts (or both)
 - Pagination support
-- Sort by: New, Top (by points), Best (algorithm: points/age)
+- **Advanced Sorting Algorithms:**
+  - **New**: Chronological order (newest first)
+  - **Top**: Hacker News ranking formula `(P-1)^0.8 / (T+2)^1.8`
+    - Balances popularity with freshness
+    - Time decay ensures front page stays current
+  - **Best**: Wilson Score Interval (95% confidence)
+    - Statistical quality ranking
+    - 10 upvotes/0 downvotes ranks higher than 100 up/30 down
 - Search functionality
 - Edit and delete own posts
 
@@ -153,8 +160,50 @@ curl -X POST http://localhost:8080/api/votes/posts/1 \
 
 **Get Posts:**
 ```bash
-curl http://localhost:8080/api/posts?page=1&page_size=20
+# Get newest posts
+curl http://localhost:8080/api/posts?sort=new&page=1&page_size=20
+
+# Get top posts (HN algorithm)
+curl http://localhost:8080/api/posts?sort=top&page=1&page_size=20
+
+# Get best posts (Wilson Score)
+curl http://localhost:8080/api/posts?sort=best&page=1&page_size=20
 ```
+
+## Sorting Algorithms
+
+### Top - Hacker News Ranking Formula
+
+Posts are ranked using the authentic Hacker News algorithm:
+
+```
+Score = (P - 1)^0.8 / (T + 2)^1.8
+```
+
+Where:
+- **P** = Points (upvotes - downvotes)
+- **T** = Age in hours
+- **-1** = Ignores the submitter's automatic upvote
+- **+2** = Prevents brand new posts from instantly topping the list
+- **0.8 exponent on points** = Diminishing returns for additional votes
+- **1.8 exponent on time** = Gravity factor - ensures old posts decay
+
+**Key behavior**: Because 1.8 > 0.8, time eventually wins. Recent posts with moderate scores rank higher than old posts with many votes, keeping the front page fresh.
+
+### Best - Wilson Score Interval
+
+Posts are ranked using the Wilson Score confidence interval (95% confidence level):
+
+```
+Lower bound = (phat + z²/2n - z√[(phat(1-phat) + z²/4n)/n]) / (1 + z²/n)
+```
+
+Where:
+- **phat** = upvotes / total_votes (proportion of positive votes)
+- **z** = 1.96 (95% confidence z-score)
+- **n** = total votes
+
+**Key behavior**: This statistical approach calculates the minimum quality score a post is likely to have. A post with **10 upvotes and 0 downvotes** ranks **higher** than one with **100 upvotes and 30 downvotes**, because it has a better quality ratio with statistical confidence.
 
 ## Database Schema
 
@@ -207,7 +256,14 @@ go tool cover -html=coverage.out
   - Context utilities
   - Parameter extraction
 
-See [TESTING.md](TESTING.md) for detailed testing documentation.
+- **internal/repository**: Comprehensive sorting algorithm tests
+  - GetByNew (chronological sorting)
+  - GetByTop (HN ranking formula)
+  - GetByBest (Wilson Score Interval)
+  - Pagination and edge cases
+  - Performance benchmarks
+
+See [TESTING.md](TESTING.md) for detailed testing documentation and [TEST_SUMMARY.md](TEST_SUMMARY.md) for latest test results.
 
 ### Manual Testing
 
