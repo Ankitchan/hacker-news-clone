@@ -1,15 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import PostList from '../components/PostList';
 import SearchBar from '../components/SearchBar';
+import api from '../services/api';
 import './Feed.css';
 
 const Feed = () => {
   const [sort, setSort] = useState('new');
   const [searchQuery, setSearchQuery] = useState('');
+  const [unreadCount, setUnreadCount] = useState(0);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  // Fetch unread notification count
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await api.get('/notifications/unread/count');
+        setUnreadCount(response.data.unread_count || 0);
+      } catch (error) {
+        console.error('Failed to fetch unread count:', error);
+      }
+    };
+
+    fetchUnreadCount();
+    // Poll for updates every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -61,6 +83,13 @@ const Feed = () => {
           <div className="header-right">
             {user ? (
               <>
+                <button className="notification-bell" onClick={() => navigate('/notifications')} title="Notifications">
+                  <span className="bell-icon">🔔</span>
+                  {unreadCount > 0 && (
+                    <span className="notification-badge">{unreadCount}</span>
+                  )}
+                </button>
+                <span className="nav-separator">|</span>
                 <span className="username">{user.username}</span>
                 <span className="nav-separator">|</span>
                 <button className="nav-link" onClick={handleLogout}>
