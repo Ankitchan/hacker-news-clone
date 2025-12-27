@@ -46,6 +46,13 @@ A fully functional Hacker News clone with Go backend and React frontend.
 - Unread count badge
 - Auto-refresh every 30 seconds
 
+✅ **Spam Protection**
+- AI-powered spam detection using Hugging Face models
+- Built-in heuristic checks for instant spam filtering
+- Configurable spam detection (can be disabled)
+- Free tier compatible with minimal API usage
+- Fallback protection even without API
+
 ✅ **Security & Protection**
 - Rate limiting middleware (DDoS protection)
 - IP-based request throttling
@@ -62,6 +69,7 @@ A fully functional Hacker News clone with Go backend and React frontend.
 - **Password Hashing:** bcrypt
 - **CORS:** rs/cors
 - **Rate Limiting:** golang.org/x/time/rate
+- **Spam Detection:** Hugging Face Inference API
 
 ### Frontend
 - **Framework:** React 18
@@ -184,6 +192,44 @@ cd backend
 go build -o bin/api ./cmd/api
 ```
 
+## Docker Deployment
+
+### Quick Start with Docker Compose
+
+```bash
+# Copy environment file
+cp .env.docker .env
+
+# Edit .env and set:
+# - JWT_SECRET (required)
+# - DB_PASSWORD (required)
+# - HF_API_KEY (optional, for spam detection)
+
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+```
+
+Services will be available at:
+- **Frontend**: http://localhost
+- **Backend API**: http://localhost:8080
+- **PostgreSQL**: localhost:5432
+
+### Deploy to Hugging Face Spaces (Free)
+
+This application can be deployed to Hugging Face Spaces for free hosting:
+
+1. Create a Space at https://huggingface.co/new-space (choose Docker SDK)
+2. Push this repository to your Space
+3. Add secrets in Space settings:
+   - `JWT_SECRET`
+   - `DB_PASSWORD`
+   - `HF_API_KEY` (optional)
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions including Railway, Render, and DigitalOcean.
+
 ## Environment Variables
 
 See [.env.example](.env.example) for all configuration options:
@@ -197,6 +243,9 @@ See [.env.example](.env.example) for all configuration options:
 - `JWT_SECRET` - Secret key for JWT tokens (**CHANGE IN PRODUCTION**)
 - `JWT_EXPIRATION_HOURS` - Token expiration time
 - `CORS_ALLOWED_ORIGINS` - Allowed CORS origins
+- `SPAM_DETECTION_ENABLED` - Enable/disable spam detection (default: true)
+- `HF_API_KEY` - Hugging Face API key for spam detection (optional)
+- `HF_SPAM_MODEL` - Spam detection model ID (default: mrm8488/bert-tiny-finetuned-sms-spam-detection)
 
 ## API Documentation
 
