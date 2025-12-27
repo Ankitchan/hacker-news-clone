@@ -64,8 +64,8 @@ func (d *Detector) IsSpam(text string) (bool, float64, error) {
 		return true, 1.0, nil
 	}
 
-	// Call Hugging Face Inference API
-	url := fmt.Sprintf("https://api-inference.huggingface.co/models/%s", d.modelID)
+	// Call Hugging Face Inference API (using new router endpoint)
+	url := fmt.Sprintf("https://router.huggingface.co/models/%s", d.modelID)
 
 	requestBody := HuggingFaceRequest{
 		Inputs: text,
