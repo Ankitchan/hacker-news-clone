@@ -10,6 +10,7 @@ The project follows Test-Driven Development (TDD) practices with comprehensive u
 |---------|----------|------------|
 | `pkg/auth` | 84.2% | `password_test.go`, `jwt_test.go` |
 | `internal/utils` | 100.0% | `auth_test.go`, `request_test.go`, `response_test.go` |
+| `internal/repository` | ✅ Tested | `post_repository_sorting_test.go` |
 
 ## Running Tests
 
@@ -221,13 +222,121 @@ func TestNewFeature(t *testing.T) {
 }
 ```
 
+### Repository Package Tests (`internal/repository`)
+
+#### Sorting Algorithm Tests (`post_repository_sorting_test.go`)
+
+Comprehensive integration tests for all three sorting algorithms with real database operations.
+
+##### Test Suite Overview
+
+- ✅ **TestGetByNew** - Chronological sorting
+  - Verifies posts are sorted by creation time (newest first)
+  - Tests pagination (limit/offset)
+  - Validates ordering consistency
+
+- ✅ **TestGetByTop** - Hacker News ranking formula
+  - Tests formula: `(P-1)^0.8 / (T+2)^1.8`
+  - Validates time decay behavior
+  - Confirms recent posts rank higher than old popular posts
+  - Logs detailed ranking for manual inspection
+
+- ✅ **TestGetByBest** - Wilson Score Interval
+  - Tests 95% confidence interval calculation
+  - Validates statistical quality ranking
+  - Confirms 10 up/0 down ranks higher than 100 up/30 down
+  - Verifies edge cases with no votes
+
+- ✅ **TestSortingAlgorithmsProduceDistinctResults**
+  - Ensures each algorithm produces unique orderings
+  - Validates algorithm independence
+  - Logs comparisons for all three methods
+
+- ✅ **TestSortingWithPagination**
+  - Tests limit/offset for all sorting methods
+  - Validates correct result counts
+  - Ensures pagination doesn't break ordering
+
+- ✅ **TestSortingWithEmptyDatabase**
+  - Edge case: no posts in database
+  - Tests all three sorting methods
+  - Validates graceful handling of empty results
+
+##### Test Data Setup
+
+The tests create realistic post scenarios:
+
+```go
+// Post 1: Old Popular Post
+- Age: 48 hours
+- Votes: 50 upvotes, 5 downvotes
+- Purpose: Tests time decay in "top" algorithm
+
+// Post 2: Recent Good Post
+- Age: 2 hours
+- Votes: 20 upvotes, 2 downvotes
+- Purpose: Should rank high in "top" due to recency
+
+// Post 3: Brand New Post
+- Age: 30 minutes
+- Votes: 5 upvotes, 0 downvotes
+- Purpose: Tests freshness handling
+
+// Post 4: High Quality Post
+- Age: 6 hours
+- Votes: 10 upvotes, 0 downvotes
+- Purpose: Perfect ratio for Wilson Score
+
+// Post 5: Controversial Post
+- Age: 4 hours
+- Votes: 100 upvotes, 30 downvotes
+- Purpose: High total, lower quality ratio
+
+// Post 6: No Votes Post
+- Age: 1 hour
+- Votes: 0 upvotes, 0 downvotes
+- Purpose: Edge case testing
+```
+
+##### Performance Benchmarks
+
+```bash
+BenchmarkGetByNew-4     5    4.5ms/op  (baseline)
+BenchmarkGetByTop-4     5    5.5ms/op  (21% slower)
+BenchmarkGetByBest-4    5    7.3ms/op  (62% slower - complex Wilson Score)
+```
+
+##### Running Repository Tests
+
+```bash
+# Run all repository tests
+go test ./internal/repository -v
+
+# Run specific sorting tests
+go test ./internal/repository -run TestGetBy
+
+# Run with benchmarks
+go test ./internal/repository -bench=.
+
+# Run with race detection
+go test ./internal/repository -race
+```
+
+##### Key Validations
+
+1. **HN Formula Correctness**: Verifies recent posts with moderate scores rank higher than old posts with high scores
+2. **Wilson Score Accuracy**: Confirms statistical quality ranking works as expected
+3. **Ordering Consistency**: All sorts maintain stable, deterministic ordering
+4. **Edge Case Handling**: Empty database, zero votes, pagination boundaries
+5. **Performance**: Benchmarks ensure algorithms perform within acceptable ranges
+
 ## Future Test Plans
 
-### Repository Layer Tests
-- Database mocking
-- CRUD operations
-- Transaction handling
-- Error scenarios
+### Handler Tests (Planned)
+- HTTP endpoint testing
+- Request/response validation
+- Authentication/authorization
+- Error handling
 
 ### Handler Tests
 - HTTP endpoint testing
@@ -252,9 +361,12 @@ func TestNewFeature(t *testing.T) {
 - ✅ 84%+ average coverage
 - ✅ All edge cases covered
 - ✅ Security tests included
+- ✅ **Repository sorting algorithm tests (NEW)**
+  - Integration tests with real database
+  - All 3 sorting methods tested
+  - Performance benchmarks included
 - ⏳ Integration tests (planned)
 - ⏳ Handler tests (planned)
-- ⏳ Repository tests (planned)
 
 ## Troubleshooting
 

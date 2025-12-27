@@ -139,15 +139,100 @@ func (r *PostRepository) GetByNew(limit, offset int) ([]models.Post, int, error)
 	return r.getPostsWithOrder(limit, offset, "p.created_at DESC")
 }
 
-// GetByTop retrieves posts sorted by points (top posts)
+// GetByTop retrieves posts sorted by Hacker News ranking formula
+// Formula: Score = (Points - 1)^0.8 / (Age + 2)^1.8
+// Where Age is in hours, Points ignores the submitter's upvote
 func (r *PostRepository) GetByTop(limit, offset int) ([]models.Post, int, error) {
-	return r.getPostsWithOrder(limit, offset, "p.points DESC, p.created_at DESC")
+	// HN ranking formula: (P-1)^0.8 / (T+2)^1.8
+	// P = points (minus submitter's vote), T = age in hours
+	orderBy := `(
+		POWER(GREATEST(p.points - 1, 0), 0.8) /
+		POWER(GREATEST(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - p.created_at))/3600, 0) + 2, 1.8)
+	) DESC`
+	return r.getPostsWithOrder(limit, offset, orderBy)
 }
 
-// GetByBest retrieves posts sorted by best (algorithm: points/age)
+// GetByBest retrieves posts sorted by Wilson Score Interval
+// This algorithm calculates a confidence interval for the true quality score
+// A post with 10 upvotes and 0 downvotes ranks higher than 100 up and 30 down
 func (r *PostRepository) GetByBest(limit, offset int) ([]models.Post, int, error) {
-	// Best algorithm: points divided by hours since creation
-	return r.getPostsWithOrder(limit, offset, "(p.points::float / GREATEST(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - p.created_at))/3600, 1)) DESC")
+	// Get total count
+	var totalCount int
+	countQuery := `SELECT COUNT(*) FROM posts`
+	err := r.db.QueryRow(countQuery).Scan(&totalCount)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get post count: %w", err)
+	}
+
+	// Wilson Score Interval formula (95% confidence)
+	// Lower bound of Wilson score confidence interval for a Bernoulli parameter
+	// where: phat = upvotes/total, z = 1.96 (95% confidence), n = total votes
+	query := `
+		WITH vote_counts AS (
+			SELECT
+				post_id,
+				COUNT(*) FILTER (WHERE vote_type = 1) AS upvotes,
+				COUNT(*) FILTER (WHERE vote_type = -1) AS downvotes,
+				COUNT(*) AS total_votes
+			FROM votes
+			WHERE post_id IS NOT NULL
+			GROUP BY post_id
+		)
+		SELECT
+			p.id, p.title, p.url, p.text, p.user_id, p.points, p.created_at, p.updated_at,
+			u.username,
+			COALESCE(COUNT(DISTINCT c.id), 0) as comment_count
+		FROM posts p
+		JOIN users u ON p.user_id = u.id
+		LEFT JOIN comments c ON p.id = c.post_id
+		LEFT JOIN vote_counts vc ON p.id = vc.post_id
+		GROUP BY p.id, u.username, vc.upvotes, vc.downvotes, vc.total_votes
+		ORDER BY
+			CASE
+				WHEN COALESCE(vc.total_votes, 0) = 0 THEN 0
+				ELSE (
+					(COALESCE(vc.upvotes, 0)::float / COALESCE(vc.total_votes, 1)::float + 1.96 * 1.96 / (2 * COALESCE(vc.total_votes, 1)) -
+					1.96 * SQRT((COALESCE(vc.upvotes, 0)::float / COALESCE(vc.total_votes, 1)::float *
+					(1 - COALESCE(vc.upvotes, 0)::float / COALESCE(vc.total_votes, 1)::float) +
+					1.96 * 1.96 / (4 * COALESCE(vc.total_votes, 1))) / COALESCE(vc.total_votes, 1))) /
+					(1 + 1.96 * 1.96 / COALESCE(vc.total_votes, 1))
+				)
+			END DESC
+		LIMIT $1 OFFSET $2
+	`
+
+	rows, err := r.db.Query(query, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get posts: %w", err)
+	}
+	defer rows.Close()
+
+	var posts []models.Post
+	for rows.Next() {
+		var post models.Post
+		err := rows.Scan(
+			&post.ID,
+			&post.Title,
+			&post.URL,
+			&post.Text,
+			&post.UserID,
+			&post.Points,
+			&post.CreatedAt,
+			&post.UpdatedAt,
+			&post.Username,
+			&post.CommentCount,
+		)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to scan post: %w", err)
+		}
+		posts = append(posts, post)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("error iterating posts: %w", err)
+	}
+
+	return posts, totalCount, nil
 }
 
 // getPostsWithOrder is a helper function to get posts with custom ordering
