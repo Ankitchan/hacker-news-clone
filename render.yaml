@@ -1,15 +1,10 @@
-services:
-  # PostgreSQL Database
-  - type: pserv
-    name: hackernews-db
-    env: docker
+databases:
+  - name: hackernews-db
+    databaseName: hackernews_clone
+    user: postgres
     plan: free
-    region: oregon
-    databases:
-      - name: hackernews_db
-        databaseName: hackernews_clone
-        user: postgres
 
+services:
   # Backend API
   - type: web
     name: hackernews-backend
@@ -25,19 +20,19 @@ services:
         value: production
       - key: DB_HOST
         fromDatabase:
-          name: hackernews_db
+          name: hackernews-db
           property: host
       - key: DB_PORT
         fromDatabase:
-          name: hackernews_db
+          name: hackernews-db
           property: port
       - key: DB_USER
         fromDatabase:
-          name: hackernews_db
+          name: hackernews-db
           property: user
       - key: DB_PASSWORD
         fromDatabase:
-          name: hackernews_db
+          name: hackernews-db
           property: password
       - key: DB_NAME
         value: hackernews_clone
@@ -76,8 +71,3 @@ services:
           name: hackernews-backend
           envVarKey: RENDER_EXTERNAL_URL
 
-databases:
-  - name: hackernews_db
-    databaseName: hackernews_clone
-    user: postgres
-    plan: free
