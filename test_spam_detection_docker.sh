@@ -3,7 +3,7 @@
 # Test script for spam detection in Docker deployment
 # This demonstrates the heuristic-based spam protection working
 
-API_URL="http://localhost:8081/api"
+API_URL="http://localhost:8080/api"
 TOKEN=""
 
 echo "=== HACKER NEWS SPAM DETECTION TEST ==="
