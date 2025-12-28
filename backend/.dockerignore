@@ -1,0 +1,10 @@
+.env
+.env.local
+*.log
+bin/
+.git
+.gitignore
+README.md
+*.md
+.vscode
+.idea

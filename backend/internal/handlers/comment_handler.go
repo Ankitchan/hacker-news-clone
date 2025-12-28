@@ -2,23 +2,27 @@ package handlers
 
 import (
 	"database/sql"
+	"log"
 	"net/http"
 	"strings"
 
 	"github.com/Ankitchan/hackernews-clone/internal/models"
 	"github.com/Ankitchan/hackernews-clone/internal/repository"
 	"github.com/Ankitchan/hackernews-clone/internal/utils"
+	"github.com/Ankitchan/hackernews-clone/pkg/spam"
 )
 
 type CommentHandler struct {
-	commentRepo *repository.CommentRepository
-	postRepo    *repository.PostRepository
+	commentRepo  *repository.CommentRepository
+	postRepo     *repository.PostRepository
+	spamDetector *spam.Detector
 }
 
 func NewCommentHandler(db *sql.DB) *CommentHandler {
 	return &CommentHandler{
-		commentRepo: repository.NewCommentRepository(db),
-		postRepo:    repository.NewPostRepository(db),
+		commentRepo:  repository.NewCommentRepository(db),
+		postRepo:     repository.NewPostRepository(db),
+		spamDetector: spam.NewDetector(),
 	}
 }
 
@@ -64,6 +68,17 @@ func (h *CommentHandler) Create(w http.ResponseWriter, r *http.Request) {
 			utils.RespondWithError(w, http.StatusNotFound, "Parent comment not found")
 			return
 		}
+	}
+
+	// Check for spam
+	isSpam, confidence, err := h.spamDetector.IsSpam(commentData.Text)
+	if err != nil {
+		// Log error but don't block comment creation if spam detection fails
+		log.Printf("Spam detection error: %v", err)
+	} else if isSpam {
+		log.Printf("Spam detected with confidence %.2f: %s", confidence, commentData.Text)
+		utils.RespondWithError(w, http.StatusForbidden, "Content flagged as spam")
+		return
 	}
 
 	// Create comment
@@ -140,6 +155,17 @@ func (h *CommentHandler) CreateForPost(w http.ResponseWriter, r *http.Request) {
 			utils.RespondWithError(w, http.StatusNotFound, "Parent comment not found")
 			return
 		}
+	}
+
+	// Check for spam
+	isSpam, confidence, err := h.spamDetector.IsSpam(requestData.Text)
+	if err != nil {
+		// Log error but don't block comment creation if spam detection fails
+		log.Printf("Spam detection error: %v", err)
+	} else if isSpam {
+		log.Printf("Spam detected with confidence %.2f: %s", confidence, requestData.Text)
+		utils.RespondWithError(w, http.StatusForbidden, "Content flagged as spam")
+		return
 	}
 
 	// Create comment

@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: hackernews_db
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-hackernews_clone}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hackernews-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hackernews_backend
+    environment:
+      PORT: ${PORT:-8080}
+      ENV: ${ENV:-production}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-hackernews_clone}
+      DB_SSL_MODE: ${DB_SSL_MODE:-disable}
+      JWT_SECRET: ${JWT_SECRET:-change_this_in_production}
+      JWT_EXPIRATION_HOURS: ${JWT_EXPIRATION_HOURS:-72}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost,http://localhost:80}
+      SPAM_DETECTION_ENABLED: ${SPAM_DETECTION_ENABLED:-false}
+      HF_API_KEY: ${HF_API_KEY:-}
+      HF_SPAM_MODEL: ${HF_SPAM_MODEL:-mrm8488/bert-tiny-finetuned-sms-spam-detection}
+    ports:
+      - "${PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - hackernews-network
+    restart: unless-stopped
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hackernews_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - hackernews-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  hackernews-network:
+    driver: bridge

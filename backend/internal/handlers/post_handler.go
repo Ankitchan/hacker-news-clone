@@ -2,21 +2,25 @@ package handlers
 
 import (
 	"database/sql"
+	"log"
 	"net/http"
 	"strings"
 
 	"github.com/Ankitchan/hackernews-clone/internal/models"
 	"github.com/Ankitchan/hackernews-clone/internal/repository"
 	"github.com/Ankitchan/hackernews-clone/internal/utils"
+	"github.com/Ankitchan/hackernews-clone/pkg/spam"
 )
 
 type PostHandler struct {
-	postRepo *repository.PostRepository
+	postRepo      *repository.PostRepository
+	spamDetector  *spam.Detector
 }
 
 func NewPostHandler(db *sql.DB) *PostHandler {
 	return &PostHandler{
-		postRepo: repository.NewPostRepository(db),
+		postRepo:     repository.NewPostRepository(db),
+		spamDetector: spam.NewDetector(),
 	}
 }
 
@@ -49,6 +53,22 @@ func (h *PostHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	if !hasURL && !hasText {
 		utils.RespondWithError(w, http.StatusBadRequest, "Either URL or text content is required")
+		return
+	}
+
+	// Check for spam
+	contentToCheck := postData.Title
+	if hasText {
+		contentToCheck += " " + strings.TrimSpace(*postData.Text)
+	}
+
+	isSpam, confidence, err := h.spamDetector.IsSpam(contentToCheck)
+	if err != nil {
+		// Log error but don't block post creation if spam detection fails
+		log.Printf("Spam detection error: %v", err)
+	} else if isSpam {
+		log.Printf("Spam detected with confidence %.2f: %s", confidence, contentToCheck)
+		utils.RespondWithError(w, http.StatusForbidden, "Content flagged as spam")
 		return
 	}
 

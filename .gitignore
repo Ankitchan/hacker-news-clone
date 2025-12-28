@@ -34,3 +34,10 @@ Thumbs.db
 # Build output
 bin/
 dist/
+
+# Docker
+*.log
+
+# Test files
+.test_token
+test_notifications.sh
