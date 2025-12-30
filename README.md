@@ -217,18 +217,11 @@ Services will be available at:
 - **Backend API**: http://localhost:8080
 - **PostgreSQL**: localhost:5432
 
-### Deploy to Hugging Face Spaces (Free)
+### Deploy to Render (Free)
 
-This application can be deployed to Hugging Face Spaces for free hosting:
+This application can be deployed to Render for free hosting:
 
-1. Create a Space at https://huggingface.co/new-space (choose Docker SDK)
-2. Push this repository to your Space
-3. Add secrets in Space settings:
-   - `JWT_SECRET`
-   - `DB_PASSWORD`
-   - `HF_API_KEY` (optional)
-
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions including Railway, Render, and DigitalOcean.
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions
 
 ## Environment Variables
 

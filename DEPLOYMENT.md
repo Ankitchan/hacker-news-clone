@@ -70,76 +70,9 @@ Open your browser and navigate to:
 The database starts empty. Register your first user through the frontend at:
 http://localhost/signup
 
-## Deployment Options
+## Deployment
 
-### Option 1: Hugging Face Spaces (Recommended)
-
-Deploy to Hugging Face Spaces for free hosting:
-
-1. **Create a Space:**
-   - Go to https://huggingface.co/new-space
-   - Choose "Docker" as the SDK
-   - Set visibility to "Public"
-
-2. **Add Dockerfile:**
-
-   Create `Dockerfile` in the root:
-   ```dockerfile
-   FROM python:3.11-slim
-
-   # Install Docker Compose
-   RUN apt-get update && apt-get install -y docker-compose
-
-   WORKDIR /app
-   COPY . .
-
-   # Start services
-   CMD ["docker-compose", "up"]
-   ```
-
-3. **Configure Secrets:**
-   - In your Space settings, add secrets:
-     - `JWT_SECRET`
-     - `DB_PASSWORD`
-     - `HF_API_KEY` (optional)
-
-4. **Push Code:**
-   ```bash
-   git remote add hf https://huggingface.co/spaces/<username>/<space-name>
-   git push hf main
-   ```
-
-### Option 2: Railway.app
-
-1. **Install Railway CLI:**
-   ```bash
-   npm install -g @railway/cli
-   ```
-
-2. **Login and Initialize:**
-   ```bash
-   railway login
-   railway init
-   ```
-
-3. **Add PostgreSQL:**
-   ```bash
-   railway add postgresql
-   ```
-
-4. **Deploy:**
-   ```bash
-   railway up
-   ```
-
-5. **Set Environment Variables:**
-   ```bash
-   railway variables set JWT_SECRET=your_secret_here
-   railway variables set SPAM_DETECTION_ENABLED=true
-   railway variables set HF_API_KEY=your_key_here
-   ```
-
-### Option 3: Render.com
+### Currently deployed on: Render.com
 
 1. Create a `render.yaml`:
 
@@ -173,22 +106,6 @@ databases:
 2. Connect your repository to Render.com
 3. Deploy with one click
 
-### Option 4: DigitalOcean App Platform
-
-1. **Create App:**
-   - Go to DigitalOcean App Platform
-   - Connect your GitHub repository
-
-2. **Configure Services:**
-   - Add Backend service (Docker)
-   - Add Frontend service (Docker)
-   - Add PostgreSQL database
-
-3. **Set Environment Variables:**
-   Use the App Platform UI to set all variables from `.env.docker`
-
-4. **Deploy:**
-   Click "Deploy"
 
 ## Manual Docker Commands
 
@@ -359,26 +276,6 @@ command:
   - "-c"
   - "max_connections=200"
 ```
-
-## Security Checklist
-
-- [ ] Change `JWT_SECRET` to a strong random value
-- [ ] Use a strong `DB_PASSWORD`
-- [ ] Set up HTTPS (use reverse proxy like Nginx/Caddy)
-- [ ] Configure firewall rules
-- [ ] Enable rate limiting
-- [ ] Regular security updates: `docker-compose pull && docker-compose up -d`
-- [ ] Monitor logs for suspicious activity
-- [ ] Backup database regularly
-
-## Cost Optimization
-
-### Free Tier Recommendations
-
-1. **Hugging Face Spaces:** Free unlimited hosting for public repos
-2. **Railway:** $5/month free credit
-3. **Render:** Free tier available (with limitations)
-4. **Fly.io:** Free tier: 3 shared-cpu-1x VMs
 
 ### Minimize Spam Detection Costs
 
