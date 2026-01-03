@@ -11,7 +11,7 @@ const Comment = ({ comment, onUpdate, onDelete, level = 0 }) => {
   const [editText, setEditText] = useState(comment.text);
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState('');
-  const [localPoints, setLocalPoints] = useState(comment.points || 0);
+  const [localTotalPoints, setLocalTotalPoints] = useState(comment.total_points || 0);
   const [userVote, setUserVote] = useState(null);
   const [voting, setVoting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -80,17 +80,18 @@ const Comment = ({ comment, onUpdate, onDelete, level = 0 }) => {
     setVoting(true);
     try {
       if (userVote === voteType) {
+        // Remove vote
         await voteService.removeVoteOnComment(comment.id);
-        setLocalPoints(prev => prev - voteType);
         setUserVote(null);
       } else {
+        // Create or change vote
         await voteService.voteOnComment(comment.id, voteType);
-        if (userVote === null) {
-          setLocalPoints(prev => prev + voteType);
-        } else {
-          setLocalPoints(prev => prev + (voteType * 2));
-        }
         setUserVote(voteType);
+      }
+
+      // Trigger reload of entire comment tree to get accurate cumulative counts
+      if (onUpdate) {
+        onUpdate();
       }
     } catch (error) {
       console.error('Vote failed:', error);
@@ -151,7 +152,7 @@ const Comment = ({ comment, onUpdate, onDelete, level = 0 }) => {
             >
               ▲
             </button>
-            <span className="comment-points">{localPoints}</span>
+            <span className="comment-points">{localTotalPoints}</span>
             <button
               className={`vote-btn-small downvote ${userVote === -1 ? 'active' : ''}`}
               onClick={() => handleVote(-1)}
@@ -163,7 +164,7 @@ const Comment = ({ comment, onUpdate, onDelete, level = 0 }) => {
           </div>
         )}
         {!isOwnComment && !isAuthenticated && (
-          <span className="comment-points">{localPoints} points</span>
+          <span className="comment-points">{localTotalPoints} points</span>
         )}
         {isOwnComment && !isEditing && (
           <>

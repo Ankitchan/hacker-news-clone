@@ -142,6 +142,7 @@ func buildCommentTree(comments []models.Comment) []models.Comment {
 	commentMap := make(map[int]*models.Comment)
 	for i := range comments {
 		comments[i].Replies = []models.Comment{}
+		comments[i].TotalPoints = comments[i].Points // Initialize with own points
 		commentMap[comments[i].ID] = &comments[i]
 	}
 
@@ -179,11 +180,18 @@ func buildCommentWithReplies(comment *models.Comment, commentMap map[int]*models
 	result := *comment
 	result.Replies = []models.Comment{}
 
+	// Initialize with comment's own points
+	result.TotalPoints = result.Points
+
 	// Find all direct children
 	for id, c := range commentMap {
 		if c.ParentID.Valid && int(c.ParentID.Int64) == comment.ID {
 			// Recursively build this child with its replies
-			result.Replies = append(result.Replies, buildCommentWithReplies(commentMap[id], commentMap))
+			childComment := buildCommentWithReplies(commentMap[id], commentMap)
+			result.Replies = append(result.Replies, childComment)
+
+			// Add child's total points to parent's total
+			result.TotalPoints += childComment.TotalPoints
 		}
 	}
 
