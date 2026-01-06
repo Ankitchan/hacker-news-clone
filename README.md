@@ -59,6 +59,12 @@ A fully functional Hacker News clone with Go backend and React frontend.
 - Token bucket algorithm (10 req/sec, burst of 20)
 - Automatic cleanup to prevent memory leaks
 
+## Architecture
+
+![System Architecture](./images/hacker-news-architecture.svg)
+
+The application follows a three-tier architecture with React frontend, Go backend, and PostgreSQL database.
+
 ## Tech Stack
 
 ### Backend
